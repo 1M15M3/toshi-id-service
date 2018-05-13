@@ -15,6 +15,8 @@ env/bin/pip install -r requirements-development.txt
 
 ### Running
 
+NOTE: AWS credential for s3 need to be setup
+
 ```
 DATABASE_URL=postgres://<postgres-dsn> env/bin/python -m toshiid
 ```
