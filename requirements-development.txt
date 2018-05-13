@@ -1,1 +1,1 @@
--e git+https://github.com/toshiapp/toshi-services-lib.git#egg=toshi-services[ethereum]
+-e git+https://github.com/styner32/toshi-services-lib.git@d2434e2836f455bd20c9f66d3d46d0d945e237f8#egg=toshi-services[ethereum]
