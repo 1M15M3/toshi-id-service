@@ -2,6 +2,6 @@
 blockies==0.0.1
 asyncpg==0.10.1
 Pillow==4.0.0
-aiobotocore==0.6.0
+aiobotocore==0.9.4
 aioredis==1.1.0
 regex
