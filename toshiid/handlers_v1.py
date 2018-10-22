@@ -2,6 +2,7 @@
 import asyncio
 import asyncpg
 import regex
+import os
 import io
 import blockies
 import random
@@ -9,6 +10,8 @@ import itertools
 import string
 import datetime
 import hashlib
+import binascii
+import tornado.httpclient
 
 from toshi.database import DatabaseMixin
 from toshi.boto import BotoMixin
@@ -36,6 +39,8 @@ PUNCTUATION = string.punctuation.replace('_', '')
 MIN_AUTOID_LENGTH = 5
 
 AVATAR_URL_HASH_LENGTH = 6
+
+httpCli = tornado.httpclient.AsyncHTTPClient(max_clients=100)
 
 def generate_username(autoid_length):
     """Generate usernames postfixed with a random ID which is a concatenation
@@ -176,6 +181,29 @@ def create_identitcon(address, format='PNG'):
     if format == 'JPG':
         format = 'JPEG'
     return blockies.create(address, size=8, scale=12, format=format.upper())
+
+
+def request_to_migrate(address):
+    data = { "toshiId": address }
+    url = os.getenv('WALLET_URL', None)
+    username = os.getenv('WALLET_BASIC_AUTH_USERNAME')
+    password = os.getenv('WALLET_BASIC_AUTH_PASSWORD')
+
+    try:
+        httpCli.fetch(
+            url,
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization":'Basic %s' % (
+                binascii.b2a_base64(
+                    ('%s:%s' % (username, password)).encode('ascii')
+                ).decode('ascii').strip())
+            },
+            body=tornado.escape.json_encode(data)
+        )
+    except Exception as e:
+        log.warning("Error in request_to_migrate. toshi_id: {} \"{}\"".format(address, str(e)))
 
 class UserMixin(BotoMixin, RequestVerificationMixin, AnalyticsMixin):
 
@@ -484,6 +512,7 @@ class UserCreationHandler(UserMixin, DatabaseMixin, BaseHandler):
         self.write_user_data(user)
         self.people_set(toshi_id, {"distinct_id": analytics_encode_id(toshi_id)})
         self.track(toshi_id, "Created account")
+        request_to_migrate(toshi_id)
 
     def put(self):
         toshi_id = self.verify_request()
@@ -581,6 +610,8 @@ class UserHandler(UserMixin, DatabaseMixin, BaseHandler):
             # check for superuser update
             if not self.is_superuser(request_address):
                 raise JSONHTTPError(401, body={'errors': [{'id': 'permission_denied', 'message': 'Permission Denied'}]})
+
+        request_to_migrate(address_to_update)
 
         if self.request.files:
             return await self.update_user_avatar(address_to_update)
