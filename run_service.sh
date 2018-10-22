@@ -23,5 +23,8 @@ fi
 export DATABASE_URL=postgresql://sunjinlee:@localhost:5432/toshiid_dev
 export REDIS_URL=redis://127.0.0.1:6379
 export PGSQL_SSL_DISABLED=1
+export WALLET_URL=http://localhost:5000/rpc/v1/migrateUser
+export WALLET_BASIC_AUTH_USERNAME=dev
+export WALLET_BASIC_AUTH_PASSWORD=dev
 
 env/bin/python -m toshiid --port=3200
